@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "fabric-data-attachment-extra",
+  "version": "${version}",
+  "name": "Fabric Data Attachment Extra",
+  "description": "Adds support for Fabric data attachments on item stacks.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "me.hunam.fabricdataattachmentextra.DataAttachmentExtra"
+    ]
+  },
+  "mixins": [
+    "fabric-data-attachment-extra.mixins.json"
+  ],
+  "accessWidener": "fabric-data-attachment-extra.classtweaker",
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "fabric-api": ">=0.145.1",
+    "minecraft": [
+      "26.1",
+      "26.1.1",
+      "26.1.2",
+      "26.2",
+      "26.3"
+    ],
+    "java": ">=25"
+  }
+}
