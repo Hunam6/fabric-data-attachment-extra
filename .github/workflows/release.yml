@@ -1,0 +1,103 @@
+name: release
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          java-version: '25'
+          distribution: 'jetbrains'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      - name: Validate release version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="$(sed -n 's/^version=//p' gradle.properties)"
+          if [[ ! "$version" =~ ^[0-9][0-9A-Za-z.+_-]*$ || "$version" == *-SNAPSHOT ]]; then
+            echo "::error::Invalid release version in gradle.properties"
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "$version" && "$RELEASE_TAG" != "v$version" ]]; then
+            echo "::error::Release tag must match the Gradle version"
+            exit 1
+          fi
+      - name: Build and test
+        run: ./gradlew build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-artifacts
+          path: build/libs/
+          if-no-files-found: error
+
+  maven-central:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          java-version: '25'
+          distribution: 'jetbrains'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-artifacts
+          path: build/libs
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          ./gradlew publishAndReleaseToMavenCentral -x jar -x sourcesJar -x javadocJar
+
+  modrinth:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          java-version: '25'
+          distribution: 'jetbrains'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-artifacts
+          path: build/libs
+      - name: Publish to Modrinth
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+          RELEASE_NOTES: ${{ github.event.release.body }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          ./gradlew publishMods -x jar -x sourcesJar -x javadocJar
+
+  modrinth-readme:
+    needs: modrinth
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Update Modrinth description
+        uses: funnyboy-roks/modrinth-auto-desc@v1.7
+        with:
+          auth-token: ${{ secrets.MODRINTH_TOKEN }}
+          slug: ${{ vars.MODRINTH_PROJECT_ID }}
+          branch: ${{ github.sha }}

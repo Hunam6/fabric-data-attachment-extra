@@ -4,6 +4,18 @@
   "version": "${version}",
   "name": "Fabric Data Attachment Extra",
   "description": "Adds support for Fabric data attachments on item stacks.",
+  "authors": [
+    {
+      "name": "Hunam",
+      "contact": {
+        "homepage": "https://github.com/Hunam6"
+      }
+    }
+  ],
+  "contact": {
+    "homepage": "https://github.com/Hunam6/fabric-data-attachment-extra",
+    "sources": "https://github.com/Hunam6/fabric-data-attachment-extra"
+  },
   "license": "MIT",
   "environment": "*",
   "entrypoints": {

@@ -4,7 +4,13 @@ A *Fabric Data Attachments API* extension that adds support for attaching attach
 
 ## Usage
 
-Register attachment types as usual:
+Add this to the `dependencies` block in your `build.gradle` file. [Check Modrinth](https://modrinth.com/project/fabric-data-attachement-extra/versions) for the version numbers.
+
+```groovy
+implementation "me.hunam:fabric-data-attachment-extra:<latest_version>"
+```
+
+Then register attachment types as usual:
 
 ```java
 public static final AttachmentType<Integer> CHARGE = AttachmentRegistry.create(
@@ -26,4 +32,4 @@ Use Fabric's `syncWith` to synchronize an attachment. **Its predicate is ignored
 
 ## License
 
-[MIT License](LICENSE)
+[MIT License](https://github.com/Hunam6/fabric-data-attachment-extra/blob/main/LICENSE)

@@ -1,6 +1,11 @@
+import groovy.json.JsonSlurper
+import me.modmuss50.mpp.ReleaseType
+
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
+    id 'com.vanniktech.maven.publish.base' version '0.37.0'
+    id 'me.modmuss50.mod-publish-plugin' version '2.2.1'
 }
 
 repositories {
@@ -48,6 +53,7 @@ java {
     // if it is present.
     // If you remove this line, sources will not be generated.
     withSourcesJar()
+    withJavadocJar()
 
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
@@ -62,19 +68,70 @@ jar {
     }
 }
 
-// configure the maven publication
+def modMetadata = providers.fileContents(layout.projectDirectory.file("src/main/resources/fabric.mod.json"))
+        .asText.map { new JsonSlurper().parseText(it) }
+
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
-            from components.java
+            artifact tasks.jar
+            artifact tasks.sourcesJar
+            artifact tasks.javadocJar
+
+            pom {
+                name = modMetadata.map { (String) it.name }
+                description = modMetadata.map { (String) it.description }
+                url = modMetadata.map { (String) it.contact.homepage }
+                licenses {
+                    license {
+                        name = modMetadata.map { (String) it.license }
+                        url = modMetadata.map { "https://spdx.org/licenses/${it.license}.html".toString() }
+                    }
+                }
+                developers {
+                    modMetadata.get().authors.each { author ->
+                        developer {
+                            id = author.contact.homepage.tokenize("/").last()
+                            name = author.name
+                            url = author.contact.homepage
+                        }
+                    }
+                }
+                scm {
+                    url = modMetadata.map { (String) it.contact.sources }
+                    connection = modMetadata.map { "scm:git:${it.contact.sources}.git".toString() }
+                    developerConnection = modMetadata.map { "scm:git:${it.contact.sources}.git".toString() }
+                }
+            }
         }
     }
+}
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+}
+
+publishMods {
+    file = jar.archiveFile
+    changelog = providers.environmentVariable("RELEASE_NOTES").orElse("")
+    type = providers.environmentVariable("RELEASE_PRERELEASE")
+            .map { it == "true" ? ReleaseType.BETA : ReleaseType.STABLE }
+            .orElse(ReleaseType.STABLE)
+    modLoaders.add("fabric")
+
+    //noinspection GroovyAssignabilityCheck
+    modrinth {
+        projectId = providers.environmentVariable("MODRINTH_PROJECT_ID")
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.addAll(modMetadata.map { it.depends.minecraft })
+        environment = CLIENT_AND_SERVER
+        requires("fabric-api")
+        additionalFile(sourcesJar) {
+            type = SOURCES_JAR
+        }
+        additionalFile(javadocJar) {
+            type = JAVADOC_JAR
+        }
     }
 }
