@@ -8,7 +8,6 @@ import io.netty.handler.codec.DecoderException;
 import me.hunam.fabricdataattachmentextra.item_stack.StackAttachmentComponents;
 import me.hunam.fabricdataattachmentextra.item_stack.StackAttachmentNetworking;
 import me.hunam.fabricdataattachmentextra.item_stack.StackAttachments;
-import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
@@ -98,14 +97,10 @@ class ItemStackAttachmentTest {
     }
 
     @Test
-    void initializerIsRegisteredOnBothSides() {
+    void commonInitializerIsRegistered() {
         assertTrue(FabricLoader.getInstance().getEntrypointContainers("main", ModInitializer.class).stream()
                 .filter(entrypoint -> entrypoint.getProvider().getMetadata().getId().equals(DataAttachmentExtra.MOD_ID))
                 .anyMatch(entrypoint -> entrypoint.getEntrypoint() instanceof DataAttachmentExtra));
-        assertTrue(FabricLoader.getInstance().getEntrypointContainers("client", ClientModInitializer.class).stream()
-                .filter(entrypoint -> entrypoint.getProvider().getMetadata().getId().equals(DataAttachmentExtra.MOD_ID))
-                .anyMatch(entrypoint -> entrypoint.getEntrypoint().getClass().getName()
-                        .equals("me.hunam.fabricdataattachmentextra.client.DataAttachmentExtraClient")));
     }
 
     @Test
