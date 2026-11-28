@@ -17,6 +17,17 @@
     "sources": "https://github.com/Hunam6/fabric-data-attachment-extra"
   },
   "license": "MIT",
+  "icon": "assets/fabric-data-attachment-extra/icon.png",
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.modrinth": "https://modrinth.com/project/fabric-data-attachment-extra"
+      },
+      "badges": [
+        "library"
+      ]
+    }
+  },
   "environment": "*",
   "entrypoints": {
     "main": [
